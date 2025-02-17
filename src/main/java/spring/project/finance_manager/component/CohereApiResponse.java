@@ -1,4 +1,4 @@
-package spring.project.finance_manager.request;
+package spring.project.finance_manager.component;
 
 import java.util.List;
 
