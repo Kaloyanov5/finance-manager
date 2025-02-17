@@ -1,9 +1,10 @@
 package spring.project.finance_manager.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "transactions")
@@ -19,19 +20,33 @@ public class Transaction {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    private Date date;
+    private LocalDate date;
 
     @Column(nullable = false)
     private String category;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
+
     public Transaction() { }
 
-    public Transaction(Long id, String description, BigDecimal amount, Date date, String category) {
+    public Transaction(Long id, String description, BigDecimal amount, LocalDate date, String category, User user) {
         this.id = id;
         this.description = description;
         this.amount = amount;
         this.date = date;
         this.category = category;
+        this.user = user;
+    }
+
+    public Transaction(String description, BigDecimal amount, LocalDate date, String category, User user) {
+        this.description = description;
+        this.amount = amount;
+        this.date = date;
+        this.category = category;
+        this.user = user;
     }
 
     public Long getId() {
@@ -58,11 +73,11 @@ public class Transaction {
         this.amount = amount;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
@@ -72,5 +87,13 @@ public class Transaction {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

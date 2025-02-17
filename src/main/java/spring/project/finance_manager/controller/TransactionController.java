@@ -6,8 +6,6 @@ import spring.project.finance_manager.entity.Transaction;
 import spring.project.finance_manager.request.TransactionRequest;
 import spring.project.finance_manager.service.TransactionService;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api")
 public class TransactionController {
@@ -19,12 +17,19 @@ public class TransactionController {
     }
 
     @GetMapping("/transactions")
-    public List<Transaction> getTransactions() {
-        return transactionService.getAllTransactions();
+    public ResponseEntity<?> getTransactions(@RequestHeader("Authorization") String token) {
+        return transactionService.getAllTransactions(token);
     }
 
     @PostMapping("/transactions")
-    public ResponseEntity<?> saveTransaction(@RequestBody TransactionRequest request) {
-        return transactionService.saveTransaction(request);
+    public ResponseEntity<?> saveTransaction(@RequestHeader("Authorization") String token,
+                                             @RequestBody TransactionRequest request) {
+        return transactionService.saveTransaction(token, request);
+    }
+
+    @DeleteMapping("/transactions/{id}")
+    public ResponseEntity<?> deleteTransaction(@RequestHeader("Authorization") String token,
+                                               @PathVariable Long id) {
+        return transactionService.deleteTransaction(token, id);
     }
 }

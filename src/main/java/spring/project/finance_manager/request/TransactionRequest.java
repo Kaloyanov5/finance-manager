@@ -1,12 +1,13 @@
 package spring.project.finance_manager.request;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 public class TransactionRequest {
     private String description;
     private BigDecimal amount;
-    private Date date;
+    private LocalDate date;
 
     public String getDescription() {
         return description;
@@ -24,11 +25,11 @@ public class TransactionRequest {
         this.amount = amount;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 }
