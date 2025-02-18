@@ -2,7 +2,6 @@ package spring.project.finance_manager.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import spring.project.finance_manager.entity.Transaction;
 import spring.project.finance_manager.request.TransactionRequest;
 import spring.project.finance_manager.service.TransactionService;
 

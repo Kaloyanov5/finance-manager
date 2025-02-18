@@ -1,6 +1,5 @@
 package spring.project.finance_manager.controller;
 
-import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring.project.finance_manager.request.LoginRequest;

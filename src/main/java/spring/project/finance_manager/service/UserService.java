@@ -53,7 +53,7 @@ public class UserService {
         User user = userRepository.findByEmail(request.getEmail()).get();
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword()))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect password!");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Incorrect password!");
 
         String token = jwtUtil.generateToken(user.getEmail());
         return ResponseEntity.ok(new AuthResponse(token));
