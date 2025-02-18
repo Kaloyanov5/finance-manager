@@ -1,5 +1,6 @@
 package spring.project.finance_manager.service;
 
+import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,6 +14,7 @@ import spring.project.finance_manager.request.LoginRequest;
 import spring.project.finance_manager.request.RegisterRequest;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -55,5 +57,21 @@ public class UserService {
 
         String token = jwtUtil.generateToken(user.getEmail());
         return ResponseEntity.ok(new AuthResponse(token));
+    }
+
+    public ResponseEntity<?> getUsername(String token) {
+        try {
+            jwtUtil.validateToken(token.substring(7));
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token!");
+        }
+
+        String email = jwtUtil.extractEmail(token.substring(7));
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        if (!optionalUser.isPresent())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with this email does not exist!");
+
+        return ResponseEntity.ok(optionalUser.get().getName());
     }
 }

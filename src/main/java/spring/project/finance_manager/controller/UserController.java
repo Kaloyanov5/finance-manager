@@ -1,10 +1,8 @@
 package spring.project.finance_manager.controller;
 
+import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import spring.project.finance_manager.request.LoginRequest;
 import spring.project.finance_manager.request.RegisterRequest;
 import spring.project.finance_manager.service.UserService;
@@ -27,5 +25,10 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
         return userService.loginUser(request);
+    }
+
+    @GetMapping("/username")
+    public ResponseEntity<?> getUsername(@RequestHeader("Authorization") String token) {
+        return userService.getUsername(token);
     }
 }
