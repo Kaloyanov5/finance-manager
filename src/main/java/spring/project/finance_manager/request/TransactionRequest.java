@@ -2,7 +2,6 @@ package spring.project.finance_manager.request;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Date;
 
 public class TransactionRequest {
     private String description;
