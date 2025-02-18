@@ -1,0 +1,105 @@
+<html lang="en" class="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Finance Manager Dashboard</title>
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+
+    <body class="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+    <div id="auth-modal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+        <div class="bg-white dark:bg-gray-700 p-8 rounded shadow-lg w-full max-w-md">
+            <div class="flex mb-4">
+                <button id="login-tab" class="w-1/2 p-2 text-center font-semibold bg-blue-600 text-white rounded-l">
+                    Login
+                </button>
+                <button id="register-tab" class="w-1/2 p-2 text-center font-semibold bg-gray-300 dark:bg-gray-500 text-black rounded-r">
+                    Register
+                </button>
+            </div>
+            <div id="auth-form-wrapper">
+                <div id="login-form-content" class="auth-form visible-form">
+                    <form id="login-form" class="space-y-3">
+                        <input type="email" placeholder="Email" class="w-full p-2 border rounded" required>
+                        <input type="password" placeholder="Password" class="w-full p-2 border rounded" required>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Login</button>
+                    </form>
+                </div>
+                <div id="register-form-content" class="auth-form invisible-form">
+                    <form id="register-form" class="space-y-3">
+                        <input type="text" placeholder="Name" class="w-full p-2 border rounded" required>
+                        <input type="email" placeholder="Email" class="w-full p-2 border rounded" required>
+                        <input type="password" placeholder="Password" class="w-full p-2 border rounded" required>
+                        <input type="password" placeholder="Confirm Password" class="w-full p-2 border rounded" required>
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-900 shadow">
+          <h1 class="text-xl font-bold">Welcome, <span id="username">User</span></h1>
+          <button id="mode-toggle" class="px-4 py-2 border rounded">Toggle Dark/Light</button>
+        </header>
+    
+        <main class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <section class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">Transactions</h2>
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="border-b">
+                  <th class="px-2 py-1 text-left">Description</th>
+                  <th class="px-2 py-1 text-left">Amount</th>
+                  <th class="px-2 py-1 text-left">Date</th>
+                  <th class="px-2 py-1 text-left">Category</th>
+                  <th class="px-2 py-1">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="transaction-table">
+              </tbody>
+            </table>
+          </section>
+
+          <section class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">Spending Summary</h2>
+            <div class="chart-container">
+                <canvas id="pieChart"></canvas>
+            </div>
+            <p class="mt-4">You spent <strong id="total-spent"></strong> in total. Your money was spent on:</p>
+            <ul>
+
+            </ul>
+          </section>
+
+          <section class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">Tasks</h2>
+            <div id="task-list">
+              <div class="chat-bubble">Review monthly budget <button class="ml-2 text-red-500 delete-task">x</button></div>
+            </div>
+            <div class="mt-3">
+              <input type="text" id="new-task" placeholder="Add new task" class="p-2 border rounded w-full">
+              <button id="add-task" class="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">Add Task</button>
+            </div>
+          </section>
+
+          <section class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">AI Chatbot</h2>
+            <div id="chatbot" class="h-48 overflow-y-auto mb-2 border p-2 rounded">
+              <div class="chat-bubble">Hi! Ask me: "How can I save more money?"</div>
+              <div class="chat-bubble">Or: "Give me tips to improve my spending."</div>
+            </div>
+            <div>
+              <input type="text" id="chat-input" placeholder="Type your question..." class="p-2 border rounded w-full">
+              <button id="send-chat" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Send</button>
+            </div>
+          </section>
+        </main>
+      </div>
+
+    <script src="scripts.js"></script>
+    </body>
+</html>
