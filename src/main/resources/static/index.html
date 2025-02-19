@@ -43,7 +43,7 @@
     <div id="dashboard" class="hidden">
         <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-900 shadow">
           <h1 class="text-xl font-bold">Welcome, <span id="username">User</span></h1>
-          <button id="mode-toggle" class="px-4 py-2 border rounded">Toggle Dark/Light</button>
+          <button id="add-transaction" class="px-4 py-2 border rounded">Add Transaction</button>
         </header>
     
         <main class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -66,11 +66,11 @@
 
           <section class="bg-white dark:bg-gray-900 p-4 rounded shadow">
             <h2 class="text-lg font-semibold mb-2">Spending Summary</h2>
-            <div class="chart-container">
+            <div class="chart-container" id="chart-div">
                 <canvas id="pieChart"></canvas>
             </div>
-            <p class="mt-4">You spent <strong id="total-spent"></strong> in total. Your money was spent on:</p>
-            <ul>
+            <p class="mt-4" id="spent-text">You spent <strong id="total-spent"></strong> in total. Your money was spent on:</p>
+            <ul id="category-percent-list">
 
             </ul>
           </section>
