@@ -46,8 +46,10 @@ document.getElementById('login-form').addEventListener('submit', async function(
             jwtToken = data.token;
             document.getElementById('auth-modal').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
+            const transactions = await getTransactions();
             await getUsername();
-            await getTransactions();
+            await updateTransactionTable(transactions);
+            await updateChartData(transactions);
             e.target.reset();
         } else if (response.status === 403 || response.status === 404) {
             alert(await response.text());
@@ -96,22 +98,26 @@ document.getElementById('register-form').addEventListener('submit', async functi
         alert("Error occurred! Check console for more information!");
         console.error("Error registering:", error);
     }
-
-
 });
 
-document.getElementById('mode-toggle').addEventListener('click', function() {
-    document.documentElement.classList.toggle('dark');
+document.getElementById("add-transaction").addEventListener("click", async function() {
+    // add transaction logic
 });
 
 const ctx = document.getElementById('pieChart').getContext('2d');
     const pieChart = new Chart(ctx, {
       type: 'pie',
       data: {
-        labels: ['Groceries', 'Entertainment', 'Shopping', 'Other'],
+        labels: [
+            "Groceries", "Rent", "Entertainment", "Shopping",
+            "Food", "Travel", "Gift", "Personal", "Savings"
+        ],
         datasets: [{
-            data: [40, 30, 20, 10],
-            backgroundColor: ['#F87171', '#60A5FA', '#34D399', '#FBBF24'],
+            data: [5, 5, 5, 5, 5, 5, 5, 5, 5],
+            backgroundColor: [
+                '#F87171', '#60A5FA', '#34D399', '#FBBF24',
+                '#F472B6', '#A78BFA', '#10B911', '#FACC95', '#22D3EE'
+            ],
             }]
         },
         options: {
@@ -166,25 +172,32 @@ const getTransactions = async () => {
         });
 
         if (response.ok) {
-            const data = await response.json();
-            const transactionTable = document.getElementById("transaction-table");
-            transactionTable.innerHTML = data.map(transaction => `
-                <tr class="border-b">
-                  <td class="px-2 py-1">${transaction.description}</td>
-                  <td class="px-2 py-1">$${transaction.amount.toFixed(2)}</td>
-                  <td class="px-2 py-1">${transaction.date}</td>
-                  <td class="px-2 py-1">${transaction.category}</td>
-                  <td class="px-2 py-1"><button class="text-red-500 delete-btn" onclick="deleteTransaction(${transaction.id})">Delete</button></td>
-                </tr>
-            `).join("");
+            return await response.json();
         } else if (response.status === 401) {
             alert(await response.text());
         } else {
             alert("Failed to load transactions.");
         }
+
+        return null;
     } catch (error) {
         alert("Error occurred! Check console for more information!");
         console.error("Error fetching data:", error);
+    }
+};
+
+const updateTransactionTable = async (transactions) => {
+    if (transactions !== null) {
+        const transactionTable = document.getElementById("transaction-table");
+        transactionTable.innerHTML = transactions.map(transaction => `
+            <tr class="border-b">
+              <td class="px-2 py-1">${transaction.description}</td>
+              <td class="px-2 py-1">$${transaction.amount.toFixed(2)}</td>
+              <td class="px-2 py-1">${transaction.date}</td>
+              <td class="px-2 py-1">${transaction.category}</td>
+              <td class="px-2 py-1"><button class="text-red-500 delete-btn" onclick="deleteTransaction(${transaction.id})">Delete</button></td>
+            </tr>
+        `).join("");
     }
 };
 
@@ -199,7 +212,9 @@ const deleteTransaction = async (id) => {
         });
 
         if (response.ok) {
-            await getTransactions();
+            const transactions = await getTransactions();
+            await updateTransactionTable(transactions);
+            await updateChartData(transactions);
         } else if (response.status === 401 || response.status === 404) {
             alert(await response.text());
         } else {
@@ -210,3 +225,38 @@ const deleteTransaction = async (id) => {
         console.error("Error deleting transaction:", error);
     }
 };
+
+const updateChartData = async (transactions) => {
+    const chartCanvas = document.getElementById("chart-div");
+
+    const categoryTotals = transactions.reduce((totals, transaction) => {
+        if (!totals[transaction.category]) {
+            totals[transaction.category] = 0;
+        }
+        totals[transaction.category] += transaction.amount;
+        return totals;
+    }, {});
+
+    const totalAmountSpent = transactions.reduce((total, transaction) => {
+        return total + transaction.amount;
+    }, 0);
+
+    const spentText = document.getElementById("spent-text");
+    if (totalAmountSpent === 0) {
+        chartCanvas.classList.add("hidden");
+        spentText.innerHTML = "You have no transactions.";
+    } else {
+        chartCanvas.classList.remove("hidden");
+        spentText.innerHTML = `You spent <strong>$${totalAmountSpent}</strong> in total. Your money was spent on:`;
+
+        const categorySpentList = document.getElementById("category-percent-list");
+        categorySpentList.innerHTML = Object.entries(categoryTotals).map(([category, amount]) => {
+            const percentage = ((amount / totalAmountSpent) * 100).toFixed(2);
+            return `<li>${category}: ${percentage}%</li>`;
+        }).join("");
+
+        pieChart.data.labels = Object.keys(categoryTotals);
+        pieChart.data.datasets[0].data = Object.values(categoryTotals);
+        pieChart.update();
+    }
+}
