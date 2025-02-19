@@ -100,6 +100,7 @@ public class TransactionService {
                 "4. \"Bought a gift for my girlfriend\" → Category: Gift\n" +
                 "5. \"Paid for streaming subscription\" → Category: Entertainment\n" +
                 "6. \"Added to savings account\" → Category: Savings\n\n" +
+                "I want your answer to be just one word, which is just the category itself." +
                 "Now, classify the following:\n" +
                 "- " + description;
 
@@ -130,8 +131,7 @@ public class TransactionService {
         try {
             CohereApiResponse apiResponse = objectMapper.readValue(response.getBody(), CohereApiResponse.class);
             if (apiResponse != null && !apiResponse.getGenerations().isEmpty()) {
-                return apiResponse.getGenerations().get(0).getText().trim().split(" ")[1]
-                        .replace(".", "").trim();
+                return apiResponse.getGenerations().get(0).getText();
             }
         } catch (JsonProcessingException e) {
             return "Error processing AI response";
