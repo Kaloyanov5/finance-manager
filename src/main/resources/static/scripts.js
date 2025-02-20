@@ -5,6 +5,9 @@ const registerTab = document.getElementById('register-tab');
 const loginForm = document.getElementById('login-form-content');
 const registerForm = document.getElementById('register-form-content');
 
+const transactionModal = document.getElementById("transaction-modal");
+const dashboard = document.getElementById("dashboard");
+
 let jwtToken = "";
 
 loginTab.addEventListener('click', () => {
@@ -100,24 +103,64 @@ document.getElementById('register-form').addEventListener('submit', async functi
     }
 });
 
-document.getElementById("add-transaction").addEventListener("click", async function() {
-    // add transaction logic
+document.getElementById("add-transaction").addEventListener("click", () => {
+    transactionModal.classList.remove("hidden");
+    dashboard.classList.add("pointer-events-none", "opacity-50");
+});
+
+document.getElementById("cancel-transaction").addEventListener("click",  () => {
+    transactionModal.classList.add("hidden");
+    dashboard.classList.remove("pointer-events-none", "opacity-50");
+})
+
+document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const description = document.getElementById("trans-description").value;
+    const amount = document.getElementById("trans-amount").value;
+    const date = document.getElementById("trans-date").value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/transactions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${jwtToken}`
+            },
+            body: JSON.stringify({ description, amount, date })
+        });
+
+        if (response.ok) {
+            transactionModal.classList.add('hidden');
+            dashboard.classList.remove('pointer-events-none', 'opacity-50');
+            const transactions = await getTransactions();
+            await updateTransactionTable(transactions);
+            await updateChartData(transactions);
+            e.target.reset();
+        } else if (response.status === 401) {
+            alert(await response.text());
+        } else {
+            alert("Failed adding a transaction. Please check your input.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error adding a transaction:", error);
+    }
 });
 
 const ctx = document.getElementById('pieChart').getContext('2d');
     const pieChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: [
-            "Groceries", "Rent", "Entertainment", "Shopping",
-            "Food", "Travel", "Gift", "Personal", "Savings"
-        ],
-        datasets: [{
-            data: [5, 5, 5, 5, 5, 5, 5, 5, 5],
-            backgroundColor: [
-                '#F87171', '#60A5FA', '#34D399', '#FBBF24',
-                '#F472B6', '#A78BFA', '#10B911', '#FACC95', '#22D3EE'
+        type: 'pie',
+        data: {
+            labels: [
+                "Groceries", "Rent", "Entertainment", "Shopping",
+                "Food", "Travel", "Gift", "Personal", "Savings"
             ],
+            datasets: [{
+                data: [5, 5, 5, 5, 5, 5, 5, 5, 5],
+                backgroundColor: [
+                    '#F87171', '#60A5FA', '#34D399', '#FBBF24',
+                    '#F472B6', '#A78BFA', '#10B911', '#FACC95', '#22D3EE'
+                ],
             }]
         },
         options: {
@@ -172,7 +215,8 @@ const getTransactions = async () => {
         });
 
         if (response.ok) {
-            return await response.json();
+            const transactions = await response.json();
+            return transactions.sort((a, b) => b.amount - a.amount);
         } else if (response.status === 401) {
             alert(await response.text());
         } else {
