@@ -1,4 +1,4 @@
-<html lang="en" class="dark">
+<html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -98,7 +98,23 @@
             </div>
           </section>
         </main>
-      </div>
+    </div>
+
+    <div id="transaction-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="absolute inset-0 modal-overlay"></div>
+        <div class="relative bg-white dark:bg-gray-700 p-6 rounded shadow-lg w-full max-w-md z-10">
+            <h2 class="text-2xl font-bold mb-4">Add Transaction</h2>
+            <form id="transaction-form" class="space-y-3">
+                <input type="text" id="trans-description" placeholder="Description" class="w-full p-2 border rounded" required>
+                <input type="number" id="trans-amount" placeholder="Amount" class="w-full p-2 border rounded" required step="0.01">
+                <input type="date" id="trans-date" class="w-full p-2 border rounded">
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" id="cancel-transaction" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Cancel</button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="scripts.js"></script>
     </body>
