@@ -215,8 +215,7 @@ const getTransactions = async () => {
         });
 
         if (response.ok) {
-            const transactions = await response.json();
-            return transactions.sort((a, b) => b.amount - a.amount);
+            return await response.json();
         } else if (response.status === 401) {
             alert(await response.text());
         } else {
@@ -232,6 +231,7 @@ const getTransactions = async () => {
 
 const updateTransactionTable = async (transactions) => {
     if (transactions !== null) {
+        transactions = transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         const transactionTable = document.getElementById("transaction-table");
         transactionTable.innerHTML = transactions.map(transaction => `
             <tr class="border-b">
@@ -272,6 +272,7 @@ const deleteTransaction = async (id) => {
 
 const updateChartData = async (transactions) => {
     const chartCanvas = document.getElementById("chart-div");
+    transactions = transactions.sort((a, b) => b.amount - a.amount);
 
     const categoryTotals = transactions.reduce((totals, transaction) => {
         if (!totals[transaction.category]) {
