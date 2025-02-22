@@ -292,7 +292,7 @@ const updateChartData = async (transactions) => {
         spentText.innerHTML = "You have no transactions.";
     } else {
         chartCanvas.classList.remove("hidden");
-        spentText.innerHTML = `You spent <strong>$${totalAmountSpent}</strong> in total. Your money was spent on:`;
+        spentText.innerHTML = `You spent <strong>$${totalAmountSpent.toFixed(2)}</strong> in total. Your money was spent on:`;
 
         const categorySpentList = document.getElementById("category-percent-list");
         categorySpentList.innerHTML = Object.entries(categoryTotals).map(([category, amount]) => {
