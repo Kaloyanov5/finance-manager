@@ -124,13 +124,11 @@ public class TransactionService {
                 String.class
         );
 
-        System.out.println(response.getStatusCode());
-        System.out.println(response.getBody());
-
         try {
             GeminiResponse apiResponse = objectMapper.readValue(response.getBody(), GeminiResponse.class);
             if (apiResponse != null && !apiResponse.getCandidates().isEmpty()) {
                 return apiResponse.getCandidates().get(0).getContent().getParts().get(0).getText().trim();
+
             }
         } catch (JsonProcessingException e) {
             return "Error processing AI response";
