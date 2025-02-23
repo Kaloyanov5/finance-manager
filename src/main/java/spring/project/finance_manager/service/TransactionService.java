@@ -12,11 +12,13 @@ import spring.project.finance_manager.entity.Transaction;
 import spring.project.finance_manager.entity.User;
 import spring.project.finance_manager.repository.TransactionRepository;
 import spring.project.finance_manager.repository.UserRepository;
-import spring.project.finance_manager.component.CohereApiResponse;
+import spring.project.finance_manager.component.GeminiResponse;
 import spring.project.finance_manager.request.TransactionRequest;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -28,7 +30,7 @@ public class TransactionService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final JwtUtil jwtUtil;
 
-    @Value("${cohere.api.key}")
+    @Value("${gemini.api.key}")
     private String apiKey;
 
     public TransactionService(TransactionRepository transactionRepository,
@@ -88,7 +90,7 @@ public class TransactionService {
     }
 
     public String categorizeTransaction(String description) {
-        String url = "https://api.cohere.ai/v1/generate";
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
 
         String prompt = "Please categorize the following transaction descriptions into the best category. " +
                 "Choose from the following categories: Groceries, Rent, Entertainment, Shopping, " +
@@ -104,39 +106,40 @@ public class TransactionService {
                 "Now, classify the following:\n" +
                 "- " + description;
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("prompt", prompt);
-        requestBody.put("max_tokens", 20);
-
-        String body;
-        try {
-            body = objectMapper.writeValueAsString(requestBody);
-        } catch (JsonProcessingException e) {
-            return "Error creating JSON request";
-        }
+        RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + apiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        String safePrompt = prompt.replace("\"", "\\\"");
 
-        ResponseEntity<String> response;
-        try {
-            response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-        } catch (Exception e) {
-            return "Error communicating with AI API";
-        }
+        String requestBody = "{\n" +
+                "  \"contents\": [{\n" +
+                "    \"parts\": [{\"text\": \"" + safePrompt + "\"}]\n" +
+                "  }]\n" +
+                "}";
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                url + apiKey,
+                HttpMethod.POST,
+                requestEntity,
+                String.class
+        );
+
+        System.out.println(response.getStatusCode());
+        System.out.println(response.getBody());
 
         try {
-            CohereApiResponse apiResponse = objectMapper.readValue(response.getBody(), CohereApiResponse.class);
-            if (apiResponse != null && !apiResponse.getGenerations().isEmpty()) {
-                return apiResponse.getGenerations().get(0).getText();
+            GeminiResponse apiResponse = objectMapper.readValue(response.getBody(), GeminiResponse.class);
+            if (apiResponse != null && !apiResponse.getCandidates().isEmpty()) {
+                return apiResponse.getCandidates().get(0).getContent().getParts().get(0).getText().trim();
             }
         } catch (JsonProcessingException e) {
             return "Error processing AI response";
         }
-
         return "Uncategorized";
     }
+
 }
