@@ -53,6 +53,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
             await getUsername();
             await updateTransactionTable(transactions);
             await updateChartData(transactions);
+            await loadTasks();
             e.target.reset();
         } else if (response.status === 403 || response.status === 404) {
             alert(await response.text());
@@ -305,3 +306,88 @@ const updateChartData = async (transactions) => {
         pieChart.update();
     }
 }
+
+const loadTasks = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/tasks`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${jwtToken}`
+            }
+        });
+
+        if (response.ok) {
+            const tasks = await response.json();
+            if (tasks !== null) {
+                const taskList = document.getElementById("task-list");
+                taskList.innerHTML = tasks.map(task => `
+                <div class="chat-bubble">${task.description} <button onclick="deleteTask(${task.taskId})" class="ml-2 text-red-500 delete-task">x</button></div>
+                `).join("");
+            }
+        } else if (response.status === 401) {
+            alert(await response.text());
+        } else {
+            alert("Failed to load tasks.");
+        }
+
+        return null;
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error fetching data:", error);
+    }
+}
+
+const deleteTask = async (id) => {
+    console.log(id);
+    try {
+        const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${jwtToken}`
+            }
+        });
+
+        if (response.ok) {
+            await loadTasks();
+        } else if (response.status === 401 || response.status === 404) {
+            alert(await response.text());
+        } else {
+            alert("Failed to delete task.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error deleting task:", error);
+    }
+}
+
+document.getElementById("add-task").addEventListener("click", async () => {
+    const descriptionInput = document.getElementById("new-task");
+    const description = descriptionInput.value;
+
+    if (description === "") return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/tasks`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${jwtToken}`
+            },
+            body: description
+        });
+
+        if (response.ok) {
+            await loadTasks();
+            descriptionInput.value = "";
+        } else if (response.status === 401) {
+            alert(await response.text());
+        } else {
+            alert("Failed adding a task. Please check your input.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error adding a task:", error);
+    }
+});
