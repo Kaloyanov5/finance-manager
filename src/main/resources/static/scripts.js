@@ -116,9 +116,9 @@ document.getElementById("cancel-transaction").addEventListener("click",  () => {
 
 document.getElementById('transaction-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const description = document.getElementById("trans-description").value;
-    const amount = document.getElementById("trans-amount").value;
-    const date = document.getElementById("trans-date").value;
+    const description = document.getElementById("trans-description").value.trim();
+    const amount = document.getElementById("trans-amount").value.trim();
+    const date = document.getElementById("trans-date").value.trim();
 
     try {
         const response = await fetch(`${API_BASE_URL}/transactions`, {
