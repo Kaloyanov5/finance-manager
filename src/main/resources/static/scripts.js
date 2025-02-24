@@ -1,4 +1,5 @@
 const API_BASE_URL = "http://localhost:8080/api";
+const CHAT_BASE_URL = "http://localhost:8080/chat";
 
 const loginTab = document.getElementById('login-tab');
 const registerTab = document.getElementById('register-tab');
@@ -168,17 +169,6 @@ const ctx = document.getElementById('pieChart').getContext('2d');
             responsive: true,
             maintainAspectRatio: false,
         }
-});
-
-document.getElementById('send-chat').addEventListener('click', function() {
-    const chatInput = document.getElementById('chat-input');
-    if (chatInput.value.trim() !== "") {
-      const chatDiv = document.createElement('div');
-      chatDiv.className = 'chat-bubble';
-      chatDiv.innerText = "Bot: " + "Here's a tip on saving money...";
-      document.getElementById('chatbot').appendChild(chatDiv);
-      chatInput.value = "";
-    }
 });
 
 const getUsername = async () => {
@@ -364,7 +354,7 @@ const deleteTask = async (id) => {
 
 document.getElementById("add-task").addEventListener("click", async () => {
     const descriptionInput = document.getElementById("new-task");
-    const description = descriptionInput.value;
+    const description = descriptionInput.value.trim();
 
     if (description === "") return;
 
@@ -380,7 +370,6 @@ document.getElementById("add-task").addEventListener("click", async () => {
 
         if (response.ok) {
             await loadTasks();
-            descriptionInput.value = "";
         } else if (response.status === 401) {
             alert(await response.text());
         } else {
@@ -390,4 +379,44 @@ document.getElementById("add-task").addEventListener("click", async () => {
         alert("Error occurred! Check console for more information!");
         console.error("Error adding a task:", error);
     }
+    descriptionInput.value = "";
+});
+
+document.getElementById("send-chat").addEventListener("click", async () => {
+    const chatInput = document.getElementById("chat-input");
+    const userMessage = chatInput.value.trim();
+
+    if (userMessage === "") return;
+
+    const userDiv = document.createElement("div");
+    userDiv.className = "chat-bubble";
+    userDiv.innerText = "You: " + userMessage;
+    document.getElementById('chatbot').appendChild(userDiv);
+
+    try {
+        const response = await fetch(`${CHAT_BASE_URL}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${jwtToken}`
+            },
+            body: userMessage
+        });
+
+        if (response.ok) {
+            const botResponse = await response.text();
+            const chatDiv = document.createElement("div");
+            chatDiv.className = "chat-bubble";
+            chatDiv.innerText = "Bot: " + botResponse;
+            document.getElementById('chatbot').appendChild(chatDiv);
+        } else if (response.status === 401 || response.status === 422 || response.status === 500) {
+            alert(await response.text());
+        } else {
+            alert("Failed to communicate with the chatbot. Please check your message request.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error communicating with AI:", error);
+    }
+    chatInput.value = "";
 });
