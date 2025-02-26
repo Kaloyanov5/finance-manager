@@ -9,8 +9,6 @@ const registerForm = document.getElementById('register-form-content');
 const transactionModal = document.getElementById("transaction-modal");
 const dashboard = document.getElementById("dashboard");
 
-let jwtToken = "";
-
 loginTab.addEventListener('click', () => {
     loginForm.classList.remove('invisible-form');
     loginForm.classList.add('visible-form');
@@ -42,19 +40,12 @@ document.getElementById('login-form').addEventListener('submit', async function(
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify( { email, password })
+            body: JSON.stringify( { email, password }),
+            credentials: "include"
         });
 
         if (response.ok) {
-            const data = await response.json();
-            jwtToken = data.token;
-            document.getElementById('auth-modal').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            const transactions = await getTransactions();
-            await getUsername();
-            await updateTransactionTable(transactions);
-            await updateChartData(transactions);
-            await loadTasks();
+            await login();
             e.target.reset();
         } else if (response.status === 403 || response.status === 404) {
             alert(await response.text());
@@ -125,10 +116,10 @@ document.getElementById('transaction-form').addEventListener('submit', async (e)
         const response = await fetch(`${API_BASE_URL}/transactions`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({ description, amount, date })
+            body: JSON.stringify({ description, amount, date }),
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -177,8 +168,8 @@ const getUsername = async () => {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
-            }
+            },
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -200,9 +191,9 @@ const getTransactions = async () => {
         const response = await fetch(`${API_BASE_URL}/transactions`, {
             method: "GET",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
-            }
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -241,9 +232,9 @@ const deleteTransaction = async (id) => {
         const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
             method: "DELETE",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
-            }
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -302,9 +293,9 @@ const loadTasks = async () => {
         const response = await fetch(`${API_BASE_URL}/tasks`, {
             method: "GET",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
-            }
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -334,9 +325,9 @@ const deleteTask = async (id) => {
         const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
             method: "DELETE",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
-            }
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -362,10 +353,10 @@ document.getElementById("add-task").addEventListener("click", async () => {
         const response = await fetch(`${API_BASE_URL}/tasks`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
+                "Content-Type": "application/json"
             },
-            body: description
+            body: description,
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -397,10 +388,10 @@ document.getElementById("send-chat").addEventListener("click", async () => {
         const response = await fetch(`${CHAT_BASE_URL}`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${jwtToken}`
+                "Content-Type": "application/json"
             },
-            body: userMessage
+            body: userMessage,
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -420,3 +411,78 @@ document.getElementById("send-chat").addEventListener("click", async () => {
     }
     chatInput.value = "";
 });
+
+document.getElementById("user-icon").addEventListener("click", () => {
+    const userMenu = document.getElementById("user-menu");
+    userMenu.classList.toggle("hidden");
+});
+
+document.getElementById("logout").addEventListener("click", async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            credentials: "include",
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Failed to logout.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error deleting user:", error);
+    }
+});
+
+document.getElementById("delete-user").addEventListener("click", async () => {
+    if (confirm("Are you sure you want to delete this user?")) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/delete`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+
+            if (response.ok) {
+                alert("User deleted successfully!");
+            } else {
+                alert("Failed to delete user.");
+            }
+        } catch (error) {
+            alert("Error occurred! Check console for more information!");
+            console.error("Error deleting user:", error);
+        }
+    }
+});
+
+window.onload = async function () {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/username`, {
+            method: "GET",
+            credentials: "include",
+        });
+
+        if (response.ok) {
+            const username = await response.text();
+            console.log("User is logged in as:", username);
+            await login();
+        } else {
+            console.log("User is not logged in, staying on login page");
+        }
+    } catch (error) {
+        console.error("Error checking login status:", error);
+    }
+};
+
+const login = async () => {
+    document.getElementById('auth-modal').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    const transactions = await getTransactions();
+    await getUsername();
+    await updateTransactionTable(transactions);
+    await updateChartData(transactions);
+    await loadTasks();
+}
