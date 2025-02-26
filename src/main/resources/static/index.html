@@ -42,8 +42,21 @@
 
     <div id="dashboard" class="hidden">
         <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-900 shadow">
-          <h1 class="text-xl font-bold">Welcome, <span id="username">User</span></h1>
-          <button id="add-transaction" class="px-4 py-2 border rounded">Add Transaction</button>
+            <h1 class="text-xl font-bold">Welcome, <span id="username">User</span></h1>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="user-icon" class="px-4 py-2 border rounded">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded shadow-lg">
+                        <button id="logout" class="block w-full px-4 py-2 text-left">Logout</button>
+                        <button id="delete-user" class="block w-full px-4 py-2 text-left">Delete User</button>
+                    </div>
+                </div>
+                <button id="add-transaction" class="px-4 py-2 border rounded" title="Add Transaction">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
         </header>
     
         <main class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
