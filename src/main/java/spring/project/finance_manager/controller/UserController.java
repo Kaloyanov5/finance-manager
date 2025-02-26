@@ -1,5 +1,6 @@
 package spring.project.finance_manager.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring.project.finance_manager.request.LoginRequest;
@@ -22,12 +23,26 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
-        return userService.loginUser(request);
+    public ResponseEntity<?> loginUser(@RequestBody LoginRequest request, HttpServletResponse response) {
+        return userService.loginUser(request, response);
     }
 
     @GetMapping("/username")
-    public ResponseEntity<?> getUsername(@RequestHeader("Authorization") String token) {
-        return userService.getUsername(token);
+    public ResponseEntity<?> getUsername(@CookieValue(name = "access_token", required = false) String accessToken,
+                                         @CookieValue(name = "refresh_token", required = false) String refreshToken,
+                                         HttpServletResponse response) {
+        return userService.getUsername(accessToken, refreshToken, response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser(HttpServletResponse response) {
+        return userService.logoutUser(response);
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteUser(@CookieValue(name = "access_token", required = false) String accessToken,
+                                        @CookieValue(name = "refresh_token", required = false) String refreshToken,
+                                        HttpServletResponse response) {
+        return userService.deleteUser(accessToken, refreshToken, response);
     }
 }
