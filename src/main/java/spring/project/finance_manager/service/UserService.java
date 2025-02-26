@@ -1,12 +1,12 @@
 package spring.project.finance_manager.service;
 
-import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import spring.project.finance_manager.component.AuthResponse;
 import spring.project.finance_manager.component.JwtUtil;
 import spring.project.finance_manager.entity.User;
 import spring.project.finance_manager.repository.UserRepository;
@@ -22,10 +22,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final UtilService utilService;
 
-    public UserService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public UserService(UserRepository userRepository, JwtUtil jwtUtil, UtilService utilService) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
+        this.utilService = utilService;
     }
 
     public ResponseEntity<?> registerUser(RegisterRequest request) {
@@ -46,32 +48,82 @@ public class UserService {
         return ResponseEntity.ok("User registered successfully!");
     }
 
-    public ResponseEntity<?> loginUser(LoginRequest request) {
-        if (!userRepository.findByEmail(request.getEmail()).isPresent())
+    public ResponseEntity<?> loginUser(LoginRequest request, HttpServletResponse response) {
+        String email = request.getEmail();
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with this email does not exist!");
 
-        User user = userRepository.findByEmail(request.getEmail()).get();
+        User user = optionalUser.get();
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword()))
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Incorrect password!");
 
-        String token = jwtUtil.generateToken(user.getEmail());
-        return ResponseEntity.ok(new AuthResponse(token));
+        String accessToken = jwtUtil.generateAccessToken(email);
+        String refreshToken = jwtUtil.generateRefreshToken(email);
+
+        Cookie jwtCookie = new Cookie("access_token", accessToken);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setSecure(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(15 * 60); // 15 minutes
+
+        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(7 * 24 * 60 * 60 * 2); // 14 days
+
+        response.addCookie(jwtCookie);
+        response.addCookie(refreshCookie);
+
+        return ResponseEntity.ok("Login successful");
     }
 
-    public ResponseEntity<?> getUsername(String token) {
-        try {
-            jwtUtil.validateToken(token.substring(7));
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token!");
+    public ResponseEntity<?> getUsername(String accessToken, String refreshToken, HttpServletResponse response) {
+        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
+
+            accessToken = utilService.refreshAccessToken(refreshToken, response);
+            if (accessToken == null)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
         }
 
-        String email = jwtUtil.extractEmail(token.substring(7));
+        String email = jwtUtil.extractEmail(accessToken);
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
-        if (!optionalUser.isPresent())
+        if (optionalUser.isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with this email does not exist!");
 
-        return ResponseEntity.ok(optionalUser.get().getName());
+        User user = optionalUser.get();
+        return ResponseEntity.ok(user.getName());
+    }
+
+    public ResponseEntity<?> logoutUser(HttpServletResponse response) {
+        utilService.resetCookies(response);
+        return ResponseEntity.ok("Logged out");
+    }
+
+    public ResponseEntity<?> deleteUser(String accessToken, String refreshToken, HttpServletResponse response) {
+        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
+
+            accessToken = utilService.refreshAccessToken(refreshToken, response);
+            if (accessToken == null)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
+        }
+
+        String email = jwtUtil.extractEmail(accessToken);
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        if (optionalUser.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with this email does not exist!");
+
+        User user = optionalUser.get();
+        userRepository.delete(user);
+        utilService.resetCookies(response);
+        return ResponseEntity.ok("User deleted successfully");
     }
 }

@@ -2,7 +2,7 @@ package spring.project.finance_manager.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -32,25 +32,32 @@ public class GeminiService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
+    private final UtilService utilService;
 
     public GeminiService(TransactionRepository transactionRepository, UserRepository userRepository,
-                         JwtUtil jwtUtil, ObjectMapper objectMapper) {
+                         JwtUtil jwtUtil, ObjectMapper objectMapper, UtilService utilService) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.objectMapper = objectMapper;
+        this.utilService = utilService;
     }
 
-    public ResponseEntity<?> chatWithBot(String token, String userMessage) {
+    public ResponseEntity<?> chatWithBot(String accessToken, String refreshToken,
+                                         HttpServletResponse response, String userMessage) {
         try {
-            String email;
-            try {
-                email = jwtUtil.extractEmail(token.substring(7));
-            } catch (JwtException e) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token!");
+            if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+                if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
+
+                accessToken = utilService.refreshAccessToken(refreshToken, response);
+                if (accessToken == null)
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
             }
 
+            String email = jwtUtil.extractEmail(accessToken);
             User user = userRepository.findByEmail(email).get();
+
             List<Transaction> transactions = transactionRepository.findByUser(user);
 
             if (transactions.isEmpty())
@@ -60,7 +67,9 @@ public class GeminiService {
                 conversationHistory.add(Map.of(
                         "role", "user",
                         "parts", List.of(Map.of("text",
-                                "You are a financial assistant. Provide concise and actionable financial tips, keeping responses short but informative."
+                                "You are a financial assistant. " +
+                                        "Provide concise and actionable financial tips, " +
+                                        "keeping responses short but informative."
                         ))
                 ));
             }
@@ -83,15 +92,22 @@ public class GeminiService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<String> response = restTemplate.exchange(
+            ResponseEntity<String> aiResponse = restTemplate.exchange(
                     url + apiKey,
                     HttpMethod.POST,
                     requestEntity,
                     String.class
             );
 
-            GeminiResponse responseObject = objectMapper.readValue(response.getBody(), GeminiResponse.class);
-            String botResponse = responseObject.getCandidates().get(0).getContent().getParts().get(0).getText().trim();
+            GeminiResponse responseObject = objectMapper.readValue(aiResponse.getBody(), GeminiResponse.class);
+            String botResponse = responseObject
+                    .getCandidates()
+                    .getFirst()
+                    .getContent()
+                    .getParts()
+                    .getFirst()
+                    .getText()
+                    .trim();
             if (botResponse == null || botResponse.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No response from AI!");
             }

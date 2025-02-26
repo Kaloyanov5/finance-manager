@@ -2,7 +2,7 @@ package spring.project.finance_manager.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -25,24 +25,31 @@ public class TransactionService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final JwtUtil jwtUtil;
+    private final UtilService utilService;
 
     @Value("${gemini.api.key}")
     private String apiKey;
 
     public TransactionService(TransactionRepository transactionRepository,
-                              UserRepository userRepository, JwtUtil jwtUtil) {
+                              UserRepository userRepository, JwtUtil jwtUtil, UtilService utilService) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
+        this.utilService = utilService;
     }
 
-    public ResponseEntity<?> saveTransaction(String token, TransactionRequest request) {
-        String email;
-        try {
-            email = jwtUtil.extractEmail(token.substring(7));
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token!");
+    public ResponseEntity<?> saveTransaction(String accessToken, String refreshToken,
+                                             HttpServletResponse response, TransactionRequest request) {
+        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
+
+            accessToken = utilService.refreshAccessToken(refreshToken, response);
+            if (accessToken == null)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
         }
+
+        String email = jwtUtil.extractEmail(accessToken);
         User user = userRepository.findByEmail(email).get();
 
         String requestDescription = request.getDescription();
@@ -60,25 +67,33 @@ public class TransactionService {
         return ResponseEntity.ok("Transaction saved successfully!");
     }
 
-    public ResponseEntity<?> getAllTransactions(String token) {
-        String email;
-        try {
-            email = jwtUtil.extractEmail(token.substring(7));
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token!");
+    public ResponseEntity<?> getAllTransactions(String accessToken, String refreshToken, HttpServletResponse response) {
+        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
+
+            accessToken = utilService.refreshAccessToken(refreshToken, response);
+            if (accessToken == null)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
         }
+
+        String email = jwtUtil.extractEmail(accessToken);
         User user = userRepository.findByEmail(email).get();
         return ResponseEntity.ok(transactionRepository.findByUser(user));
     }
 
-    public ResponseEntity<?> deleteTransaction(String token, Long id) {
-        try {
-            jwtUtil.validateToken(token.substring(7));
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token!");
+    public ResponseEntity<?> deleteTransaction(String accessToken, String refreshToken,
+                                               HttpServletResponse response, Long id) {
+        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
+
+            accessToken = utilService.refreshAccessToken(refreshToken, response);
+            if (accessToken == null)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
         }
 
-        if (!transactionRepository.findById(id).isPresent())
+        if (transactionRepository.findById(id).isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Transaction not found!");
 
         transactionRepository.deleteById(id);
@@ -127,8 +142,14 @@ public class TransactionService {
         try {
             GeminiResponse apiResponse = objectMapper.readValue(response.getBody(), GeminiResponse.class);
             if (apiResponse != null && !apiResponse.getCandidates().isEmpty()) {
-                return apiResponse.getCandidates().get(0).getContent().getParts().get(0).getText().trim();
-
+                return apiResponse
+                        .getCandidates()
+                        .getFirst()
+                        .getContent()
+                        .getParts()
+                        .getFirst()
+                        .getText()
+                        .trim();
             }
         } catch (JsonProcessingException e) {
             return "Error processing AI response";
