@@ -27,14 +27,9 @@ public class TaskService {
     }
 
     public ResponseEntity<?> getTasks(String accessToken, String refreshToken, HttpServletResponse response) {
-        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
-            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
-
-            accessToken = utilService.refreshAccessToken(refreshToken, response);
-            if (accessToken == null)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
-        }
+        accessToken = utilService.validateAndRefreshToken(accessToken, refreshToken, response);
+        if (accessToken == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
 
         String email = jwtUtil.extractEmail(accessToken);
         User user = userRepository.findByEmail(email).get();
@@ -44,14 +39,9 @@ public class TaskService {
 
     public ResponseEntity<?> saveTask(String accessToken, String refreshToken,
             HttpServletResponse response, String description) {
-        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
-            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
-
-            accessToken = utilService.refreshAccessToken(refreshToken, response);
-            if (accessToken == null)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
-        }
+        accessToken = utilService.validateAndRefreshToken(accessToken, refreshToken, response);
+        if (accessToken == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
 
         String email = jwtUtil.extractEmail(accessToken);
         User user = userRepository.findByEmail(email).get();
@@ -64,14 +54,9 @@ public class TaskService {
 
     public ResponseEntity<?> deleteTask(String accessToken, String refreshToken,
                                         HttpServletResponse response, Long id) {
-        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
-            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
-
-            accessToken = utilService.refreshAccessToken(refreshToken, response);
-            if (accessToken == null)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
-        }
+        accessToken = utilService.validateAndRefreshToken(accessToken, refreshToken, response);
+        if (accessToken == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
 
         if (taskRepository.findById(id).isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found!");

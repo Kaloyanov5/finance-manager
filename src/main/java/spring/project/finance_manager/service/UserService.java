@@ -81,14 +81,9 @@ public class UserService {
     }
 
     public ResponseEntity<?> getUsername(String accessToken, String refreshToken, HttpServletResponse response) {
-        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
-            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
-
-            accessToken = utilService.refreshAccessToken(refreshToken, response);
-            if (accessToken == null)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
-        }
+        accessToken = utilService.validateAndRefreshToken(accessToken, refreshToken, response);
+        if (accessToken == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
 
         String email = jwtUtil.extractEmail(accessToken);
         Optional<User> optionalUser = userRepository.findByEmail(email);
@@ -106,14 +101,9 @@ public class UserService {
     }
 
     public ResponseEntity<?> deleteUser(String accessToken, String refreshToken, HttpServletResponse response) {
-        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
-            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
-
-            accessToken = utilService.refreshAccessToken(refreshToken, response);
-            if (accessToken == null)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
-        }
+        accessToken = utilService.validateAndRefreshToken(accessToken, refreshToken, response);
+        if (accessToken == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
 
         String email = jwtUtil.extractEmail(accessToken);
         Optional<User> optionalUser = userRepository.findByEmail(email);

@@ -37,10 +37,17 @@ public class UtilService {
         response.addCookie(refreshCookie);
     }
 
-    public String refreshAccessToken(String refreshToken, HttpServletResponse response) {
-        if (!jwtUtil.validateToken(refreshToken))
-            return null;
+    public String validateAndRefreshToken(String accessToken, String refreshToken, HttpServletResponse response) {
+        if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
+                return null;
 
+            accessToken = refreshAccessToken(refreshToken, response);
+        }
+        return accessToken;
+    }
+
+    private String refreshAccessToken(String refreshToken, HttpServletResponse response) {
         String email = jwtUtil.extractEmail(refreshToken);
         Optional<User> optionalUser = userRepository.findByEmail(email);
 

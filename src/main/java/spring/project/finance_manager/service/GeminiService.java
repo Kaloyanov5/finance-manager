@@ -46,14 +46,9 @@ public class GeminiService {
     public ResponseEntity<?> chatWithBot(String accessToken, String refreshToken,
                                          HttpServletResponse response, String userMessage) {
         try {
-            if (accessToken == null || !jwtUtil.validateToken(accessToken)) {
-                if (refreshToken == null || !jwtUtil.validateToken(refreshToken))
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
-
-                accessToken = utilService.refreshAccessToken(refreshToken, response);
-                if (accessToken == null)
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to refresh access token");
-            }
+            accessToken = utilService.validateAndRefreshToken(accessToken, refreshToken, response);
+            if (accessToken == null)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired tokens. Please log in again.");
 
             String email = jwtUtil.extractEmail(accessToken);
             User user = userRepository.findByEmail(email).get();
