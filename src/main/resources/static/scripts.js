@@ -143,6 +143,8 @@ document.getElementById("delete-user").addEventListener("click", async () => {
 
             if (response.ok) {
                 window.location.reload();
+            } else if (response.status === 401 || response.status === 404){
+                alert(await response.text());
             } else {
                 alert("Failed to delete user.");
             }
