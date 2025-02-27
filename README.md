@@ -9,6 +9,7 @@ A **Spring Boot**-based Finance Manager that utilizes **AI-driven categorization
 - **Transaction Management**: Add and delete financial transactions.
 - **Interactive Dashboard**: Visualize expenses and trends.
 - **Secure Authentication**: User login and data protection.
+- **Task Management**: Add and delete tasks to complete.
 
 ## Technologies Used
 
