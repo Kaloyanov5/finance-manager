@@ -490,11 +490,7 @@ window.onload = async () => {
         });
 
         if (response.ok) {
-            const username = await response.text();
-            console.log("User is logged in as:", username);
             await login();
-        } else {
-            console.log("User is not logged in, staying on login page");
         }
     } catch (error) {
         console.error("Error checking login status:", error);
