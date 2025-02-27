@@ -458,9 +458,15 @@ document.getElementById("send-chat").addEventListener("click", async () => {
             chatDiv.className = "chat-bubble";
             chatDiv.innerText = "Bot: " + botResponse;
             document.getElementById('chatbot').appendChild(chatDiv);
-        } else if (response.status === 401 || response.status === 422 || response.status === 500) {
+        } else if (response.status === 422) {
+            await delay(800);
+            const chatDiv = document.createElement("div");
+            chatDiv.className = "chat-bubble";
+            chatDiv.innerText = "Bot: You have no transactions available.";
+            document.getElementById('chatbot').appendChild(chatDiv);
+        } else if (response.status === 401 || response.status === 500) {
             alert(await response.text());
-        } else {
+        }  else {
             alert("Failed to communicate with the chatbot. Please check your message request.");
         }
     } catch (error) {
@@ -469,6 +475,10 @@ document.getElementById("send-chat").addEventListener("click", async () => {
     }
     chatInput.value = "";
 });
+
+// DELAY FUNCTION
+
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // ON PAGE LOAD
 
