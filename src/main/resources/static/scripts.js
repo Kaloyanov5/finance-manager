@@ -9,6 +9,8 @@ const registerForm = document.getElementById('register-form-content');
 const transactionModal = document.getElementById("transaction-modal");
 const dashboard = document.getElementById("dashboard");
 
+// REGISTER/LOGIN MODAL TAB SWITCH
+
 loginTab.addEventListener('click', () => {
     loginForm.classList.remove('invisible-form');
     loginForm.classList.add('visible-form');
@@ -29,7 +31,9 @@ registerTab.addEventListener('click', () => {
     loginTab.classList.add('bg-gray-300', 'dark:bg-gray-500', 'text-black');
 });
 
-document.getElementById('login-form').addEventListener('submit', async function(e) {
+// USER LOGIN REQUEST
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.querySelector('#login-form input[type="email"]').value;
     const password = document.querySelector('#login-form input[type="password"]').value;
@@ -56,10 +60,21 @@ document.getElementById('login-form').addEventListener('submit', async function(
         alert("Error occurred! Check console for more information!");
         console.error("Error logging in:", error);
     }
-
 });
 
-document.getElementById('register-form').addEventListener('submit', async function (e) {
+const login = async () => {
+    document.getElementById('auth-modal').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    const transactions = await getTransactions();
+    await getUsername();
+    await updateTransactionTable(transactions);
+    await updateChartData(transactions);
+    await loadTasks();
+}
+
+// USER REGISTER REQUEST
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.querySelector('#register-form input[type="text"]').value;
     const email = document.querySelector('#register-form input[type="email"]').value;
@@ -96,6 +111,50 @@ document.getElementById('register-form').addEventListener('submit', async functi
     }
 });
 
+// USER LOGOUT REQUEST
+
+document.getElementById("logout").addEventListener("click", async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            credentials: "include",
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Failed to logout.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error deleting user:", error);
+    }
+});
+
+// USER DELETE REQUEST
+
+document.getElementById("delete-user").addEventListener("click", async () => {
+    if (confirm("Are you sure you want to delete this user?")) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/delete`, {
+                method: "DELETE",
+                credentials: "include"
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Failed to delete user.");
+            }
+        } catch (error) {
+            alert("Error occurred! Check console for more information!");
+            console.error("Error deleting user:", error);
+        }
+    }
+});
+
+// DASHBOARD BUTTONS AND FUNCTION FOR GETTING USERNAME
+
 document.getElementById("add-transaction").addEventListener("click", () => {
     transactionModal.classList.remove("hidden");
     dashboard.classList.add("pointer-events-none", "opacity-50");
@@ -104,7 +163,34 @@ document.getElementById("add-transaction").addEventListener("click", () => {
 document.getElementById("cancel-transaction").addEventListener("click",  () => {
     transactionModal.classList.add("hidden");
     dashboard.classList.remove("pointer-events-none", "opacity-50");
-})
+});
+
+document.getElementById("user-icon").addEventListener("click", () => {
+    const userMenu = document.getElementById("user-menu");
+    userMenu.classList.toggle("hidden");
+});
+
+const getUsername = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/username`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (response.ok) {
+            document.getElementById("username").innerText = await response.text();
+        } else if (response.status === 401 || response.status === 404){
+            alert(await response.text());
+        } else {
+            alert("Failed to fetch username.");
+        }
+    } catch (error) {
+        alert("Error occurred! Check console for more information!");
+        console.error("Error fetching data:", error);
+    }
+};
+
+// TRANSACTION REQUESTS
 
 document.getElementById('transaction-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -140,59 +226,10 @@ document.getElementById('transaction-form').addEventListener('submit', async (e)
     }
 });
 
-const ctx = document.getElementById('pieChart').getContext('2d');
-    const pieChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: [
-                "Groceries", "Rent", "Entertainment", "Shopping",
-                "Food", "Travel", "Gift", "Personal", "Savings"
-            ],
-            datasets: [{
-                data: [5, 5, 5, 5, 5, 5, 5, 5, 5],
-                backgroundColor: [
-                    '#F87171', '#60A5FA', '#34D399', '#FBBF24',
-                    '#F472B6', '#A78BFA', '#10B911', '#FACC95', '#22D3EE'
-                ],
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-        }
-});
-
-const getUsername = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth/username`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            credentials: "include"
-        });
-
-        if (response.ok) {
-            const name = await response.text();
-            document.getElementById("username").innerText = name;
-        } else if (response.status === 401 || response.status === 404){
-            alert(await response.text());
-        } else {
-            alert("Failed to fetch username.");
-        }
-    } catch (error) {
-        alert("Error occurred! Check console for more information!");
-        console.error("Error fetching data:", error);
-    }
-};
-
 const getTransactions = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/transactions`, {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            },
             credentials: "include"
         });
 
@@ -231,9 +268,6 @@ const deleteTransaction = async (id) => {
     try {
         const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
             method: "DELETE",
-            headers: {
-                "Content-Type": "application/json"
-            },
             credentials: "include"
         });
 
@@ -251,6 +285,30 @@ const deleteTransaction = async (id) => {
         console.error("Error deleting transaction:", error);
     }
 };
+
+// CHART FUNCTIONS
+
+const ctx = document.getElementById('pieChart').getContext('2d');
+const pieChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: [
+            "Groceries", "Rent", "Entertainment", "Shopping",
+            "Food", "Travel", "Gift", "Personal", "Savings"
+        ],
+        datasets: [{
+            data: [5, 5, 5, 5, 5, 5, 5, 5, 5],
+            backgroundColor: [
+                '#F87171', '#60A5FA', '#34D399', '#FBBF24',
+                '#F472B6', '#A78BFA', '#10B911', '#FACC95', '#22D3EE'
+            ],
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+    }
+});
 
 const updateChartData = async (transactions) => {
     const chartCanvas = document.getElementById("chart-div");
@@ -288,13 +346,12 @@ const updateChartData = async (transactions) => {
     }
 }
 
+// TASK REQUESTS
+
 const loadTasks = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/tasks`, {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            },
             credentials: "include"
         });
 
@@ -324,9 +381,6 @@ const deleteTask = async (id) => {
     try {
         const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
             method: "DELETE",
-            headers: {
-                "Content-Type": "application/json"
-            },
             credentials: "include"
         });
 
@@ -373,6 +427,8 @@ document.getElementById("add-task").addEventListener("click", async () => {
     descriptionInput.value = "";
 });
 
+// CHATBOT REQUESTS
+
 document.getElementById("send-chat").addEventListener("click", async () => {
     const chatInput = document.getElementById("chat-input");
     const userMessage = chatInput.value.trim();
@@ -412,53 +468,9 @@ document.getElementById("send-chat").addEventListener("click", async () => {
     chatInput.value = "";
 });
 
-document.getElementById("user-icon").addEventListener("click", () => {
-    const userMenu = document.getElementById("user-menu");
-    userMenu.classList.toggle("hidden");
-});
+// ON PAGE LOAD
 
-document.getElementById("logout").addEventListener("click", async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-            method: "POST",
-            credentials: "include",
-        });
-
-        if (response.ok) {
-            window.location.reload();
-        } else {
-            alert("Failed to logout.");
-        }
-    } catch (error) {
-        alert("Error occurred! Check console for more information!");
-        console.error("Error deleting user:", error);
-    }
-});
-
-document.getElementById("delete-user").addEventListener("click", async () => {
-    if (confirm("Are you sure you want to delete this user?")) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/delete`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include"
-            });
-
-            if (response.ok) {
-                alert("User deleted successfully!");
-            } else {
-                alert("Failed to delete user.");
-            }
-        } catch (error) {
-            alert("Error occurred! Check console for more information!");
-            console.error("Error deleting user:", error);
-        }
-    }
-});
-
-window.onload = async function () {
+window.onload = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/username`, {
             method: "GET",
@@ -476,13 +488,3 @@ window.onload = async function () {
         console.error("Error checking login status:", error);
     }
 };
-
-const login = async () => {
-    document.getElementById('auth-modal').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    const transactions = await getTransactions();
-    await getUsername();
-    await updateTransactionTable(transactions);
-    await updateChartData(transactions);
-    await loadTasks();
-}
