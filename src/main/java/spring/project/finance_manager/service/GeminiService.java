@@ -108,6 +108,7 @@ public class GeminiService {
                     .getFirst()
                     .getText()
                     .trim();
+
             if (botResponse == null || botResponse.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No response from AI!");
             }

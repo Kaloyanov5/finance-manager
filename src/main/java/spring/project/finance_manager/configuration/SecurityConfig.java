@@ -27,8 +27,7 @@ public class SecurityConfig {
                                 "/api/transactions",
                                 "/api/transactions/**",
                                 "/api/auth/username"
-                        )
-                        .authenticated()
+                        ).authenticated()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
