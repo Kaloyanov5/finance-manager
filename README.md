@@ -49,8 +49,12 @@ CREATE DATABASE finance_manager;
   - Database configuration (IP and port the server is running, name of database, user and the password to the user)
   - Gemini API key (you can get your API key from here -> https://aistudio.google.com/apikey)
   - Secret key (generate a 256 bit key here -> https://jwtsecret.com/generate)
+ 
+### 4️⃣ **Configure JavaScript URLs (optional)**
 
-### 4️⃣ **Build and Run the Application**
+If you are not running the project locally, change the URLs in `src/main/resources/static/scripts.js`
+
+### 5️⃣ **Build and Run the Application**
 
 #### Using Maven:
 
