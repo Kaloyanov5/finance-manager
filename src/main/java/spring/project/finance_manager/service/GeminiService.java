@@ -118,4 +118,59 @@ public class GeminiService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
+    public String categorizeTransaction(String description) {
+        String prompt = "Please categorize the following transaction descriptions into the best category. " +
+                "Choose from the following categories: Groceries, Rent, Entertainment, Shopping, " +
+                "Food, Travel, Gift, Personal, Savings.\n\n" +
+                "Examples:\n" +
+                "1. \"Purchased groceries at Walmart\" → Category: Groceries\n" +
+                "2. \"Dinner at a restaurant\" → Category: Food\n" +
+                "3. \"Hotel stay for vacation\" → Category: Travel\n" +
+                "4. \"Bought a gift for my girlfriend\" → Category: Gift\n" +
+                "5. \"Paid for streaming subscription\" → Category: Entertainment\n" +
+                "6. \"Added to savings account\" → Category: Savings\n\n" +
+                "I want your answer to be just one word, which is just the category itself." +
+                "Now, classify the following:\n" +
+                "- " + description;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String safePrompt = prompt.replace("\"", "\\\"");
+
+        String requestBody = "{\n" +
+                "  \"contents\": [{\n" +
+                "    \"parts\": [{\"text\": \"" + safePrompt + "\"}]\n" +
+                "  }]\n" +
+                "}";
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                url + apiKey,
+                HttpMethod.POST,
+                requestEntity,
+                String.class
+        );
+
+        try {
+            GeminiResponse apiResponse = objectMapper.readValue(response.getBody(), GeminiResponse.class);
+            if (apiResponse != null && !apiResponse.getCandidates().isEmpty()) {
+                return apiResponse
+                        .getCandidates()
+                        .getFirst()
+                        .getContent()
+                        .getParts()
+                        .getFirst()
+                        .getText()
+                        .trim();
+            }
+        } catch (JsonProcessingException e) {
+            return "Error processing AI response";
+        }
+        return "Uncategorized";
+    }
 }
