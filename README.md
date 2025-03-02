@@ -46,7 +46,7 @@ CREATE DATABASE finance_manager;
 - Create `application.properties` files in `src/main/resources/`
 - Copy the contents of `src/main/resources/application.properties.example` and paste them in the `application.properties` file
 - Assign working values to the variables:
-  - Database configuration (IP and port the server is running, name of database, user and the password to the user)
+  - Database configuration (IP and port the server is running on, name of database, user and the password to the user)
   - Gemini API key (you can get your API key from here -> https://aistudio.google.com/apikey)
   - Secret key (generate a 256 bit key here -> https://jwtsecret.com/generate)
  
