@@ -12,7 +12,7 @@
 	<artifactId>finance-manager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>finance-manager</name>
-	<description>Spring Finance Manager using AI categorization and future expense predictions</description>
+	<description>Spring Finance Manager using AI categorization and a Financial Chatbot to help users manage their expenses</description>
 	<url/>
 	<licenses>
 		<license/>
